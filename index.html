@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Todo</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .app {
+            width: min(1400px, 100%);
+            min-height: calc(100vh - 40px);
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            display: flex;
+            gap: 40px;
+        }
+
+        /* =========================
+           달력
+        ========================= */
+
+        .calendar-section {
+            flex: 1.5;
+            min-width: 0;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header button {
+            border: none;
+            background: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .calendar-header button:hover {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        #monthTitle {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            width: 100%;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px 0;
+        }
+
+        .day {
+            min-height: 105px;
+            border: 1px solid #eeeeee;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            transition: background-color 0.15s;
+        }
+
+        .day:hover {
+            background-color: #f5f5f5;
+        }
+
+        .day.selected {
+            background-color: #f5f5f5;
+        }
+
+        .day.today {
+            border: 1px solid #222;
+        }
+
+        .todo-count {
+            font-size: 12px;
+            margin-top: 8px;
+            text-align: center;
+            display: block;
+            color: #666;
+        }
+
+        /* 다른 날짜로 드래그 중일 때 */
+        .day.drag-over {
+            background-color: #eaeaea;
+            border: 2px dashed #555;
+        }
+
+        /* =========================
+           할 일 영역
+        ========================= */
+
+        .todo-section {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #selectedDateTitle {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* =========================
+           카테고리 관리
+        ========================= */
+
+        .category-manager {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        #categoryInput {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        #addCategory {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #eee;
+            cursor: pointer;
+        }
+
+        #addCategory:hover {
+            background-color: #ddd;
+        }
+
+        #categoryList {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background-color: #f5f5f5;
+            border-radius: 15px;
+            font-size: 13px;
+        }
+
+        .category-delete {
+            border: none;
+            background: none;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .category-delete:hover {
+            color: #ff4444;
+        }
+
+        /* =========================
+           할 일 입력
+        ========================= */
+
+        .todo-input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #todoCategory {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        #todoInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        #addTodo {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            background-color: #222;
+            color: white;
+            cursor: pointer;
+        }
+
+        #addTodo:hover {
+            background-color: #444;
+        }
+
+        /* =========================
+           할 일 목록
+        ========================= */
+
+        #todoList {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .todo-category-group {
+            margin-bottom: 25px;
+        }
+
+        .todo-category-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eeeeee;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 5px;
+            border-bottom: 1px solid #eeeeee;
+            background-color: white;
+            cursor: grab;
+            transition: background-color 0.15s;
+        }
+
+        .todo-item:hover {
+            background-color: #fafafa;
+        }
+
+        .todo-item:active {
+            cursor: grabbing;
+        }
+
+        .todo-item.dragging {
+            opacity: 0.4;
+            background-color: #f5f5f5;
+        }
+
+        .todo-item.drag-over {
+            border-top: 2px solid #222;
+        }
+
+        .todo-item input[type="checkbox"] {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .todo-item span {
+            flex: 1;
+            cursor: pointer;
+            word-break: break-word;
+        }
+
+        .todo-item span:hover {
+            text-decoration: underline;
+        }
+
+        .todo-item button {
+            border: none;
+            background: none;
+            color: #999;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .todo-item button:hover {
+            color: #ff4444;
+        }
+
+        /* =========================
+           반응형
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            body {
+                padding: 10px;
+            }
+
+            .app {
+                min-height: calc(100vh - 20px);
+                padding: 20px;
+                flex-direction: column;
+            }
+
+            .day {
+                min-height: 70px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         달력
+    ========================= -->
+
+    <div class="calendar-section">
+
+        <div class="calendar-header">
+
+            <button id="prevMonth">‹</button>
+
+            <div id="monthTitle"></div>
+
+            <button id="nextMonth">›</button>
+
+        </div>
+
+        <div class="calendar">
+
+            <div class="weekday">일</div>
+            <div class="weekday">월</div>
+            <div class="weekday">화</div>
+            <div class="weekday">수</div>
+            <div class="weekday">목</div>
+            <div class="weekday">금</div>
+            <div class="weekday">토</div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         할 일
+    ========================= -->
+
+    <div class="todo-section">
+
+        <div id="selectedDateTitle">
+            날짜를 선택해주세요
+        </div>
+
+
+        <!-- 카테고리 관리 -->
+
+        <div class="category-manager">
+
+            <input
+                type="text"
+                id="categoryInput"
+                placeholder="새 카테고리 이름"
+            >
+
+            <button id="addCategory">
+                카테고리 추가
+            </button>
+
+        </div>
+
+        <div id="categoryList"></div>
+
+
+        <!-- 할 일 입력 -->
+
+        <div class="todo-input-area">
+
+            <select id="todoCategory">
+
+                <option value="">
+                    카테고리 선택
+                </option>
+
+            </select>
+
+            <input
+                type="text"
+                id="todoInput"
+                placeholder="할 일을 입력하세요"
+            >
+
+            <button id="addTodo">
+                추가
+            </button>
+
+        </div>
+
+
+        <!-- 할 일 목록 -->
+
+        <div id="todoList"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* =========================
+       기본 변수
+    ========================= */
+
+    let currentYear =
+        new Date().getFullYear();
+
+    let currentMonth =
+        new Date().getMonth();
+
+    let selectedDateKey = null;
+
+    let editingTodoIndex = null;
+
+    let draggedTodoIndex = null;
+
+    let draggedTodoDateKey = null;
+
+
+    /* =========================
+       저장된 데이터 불러오기
+    ========================= */
+
+    let todos =
+        JSON.parse(
+            localStorage.getItem("myTodos")
+        ) || {};
+
+    let categories =
+        JSON.parse(
+            localStorage.getItem("myCategories")
+        ) || [];
+
+
+    /* =========================
+       카테고리 저장
+    ========================= */
+
+    function saveCategories() {
+
+        localStorage.setItem(
+            "myCategories",
+            JSON.stringify(categories)
+        );
+
+    }
+
+
+    /* =========================
+       카테고리 화면 표시
+    ========================= */
+
+    function renderCategories() {
+
+        const categoryList =
+            document.getElementById(
+                "categoryList"
+            );
+
+        categoryList.innerHTML = "";
+
+        categories.forEach(
+            function (category, index) {
+
+                const categoryItem =
+                    document.createElement("div");
+
+                categoryItem.className =
+                    "category-item";
+
+
+                const categoryName =
+                    document.createElement("span");
+
+                categoryName.textContent =
+                    category;
+
+
+                const deleteButton =
+                    document.createElement("button");
+
+                deleteButton.textContent = "×";
+
+                deleteButton.className =
+                    "category-delete";
+
+
+                deleteButton.addEventListener(
+                    "click",
+                    function () {
+
+                        categories.splice(
+                            index,
+                            1
+                        );
+
+                        saveCategories();
+
+                        renderCategories();
+
+                        renderTodoCategories();
+
+                    }
+                );
+
+
+                categoryItem.appendChild(
+                    categoryName
+                );
+
+                categoryItem.appendChild(
+                    deleteButton
+                );
+
+                categoryList.appendChild(
+                    categoryItem
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================
+       일정 카테고리 선택창
+    ========================= */
+
+    function renderTodoCategories() {
+
+        const categorySelect =
+            document.getElementById(
+                "todoCategory"
+            );
+
+        categorySelect.innerHTML = "";
+
+
+        const defaultOption =
+            document.createElement("option");
+
+        defaultOption.value = "";
+
+        defaultOption.textContent =
+            "카테고리 선택";
+
+        categorySelect.appendChild(
+            defaultOption
+        );
+
+
+        categories.forEach(
+            function (category) {
+
+                const option =
+                    document.createElement("option");
+
+                option.value =
+                    category;
+
+                option.textContent =
+                    category;
+
+                categorySelect.appendChild(
+                    option
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================
+       카테고리 추가
+    ========================= */
+
+    document
+        .getElementById("addCategory")
+        .addEventListener(
+            "click",
+            function () {
+
+                const input =
+                    document.getElementById(
+                        "categoryInput"
+                    );
+
+                const categoryName =
+                    input.value.trim();
+
+
+                if (!categoryName) {
+
+                    alert(
+                        "카테고리 이름을 입력해주세요."
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    categories.includes(
+                        categoryName
+                    )
+                ) {
+
+                    alert(
+                        "이미 있는 카테고리입니다."
+                    );
+
+                    return;
+                }
+
+
+                categories.push(
+                    categoryName
+                );
+
+                saveCategories();
+
+                input.value = "";
+
+                renderCategories();
+
+                renderTodoCategories();
+
+            }
+        );
+
+
+    /* =========================
+       달력 렌더링
+    ========================= */
+
+    function renderCalendar() {
+
+        const calendar =
+            document.querySelector(
+                ".calendar"
+            );
+
+
+        const dayCells =
+            calendar.querySelectorAll(
+                ".day"
+            );
+
+
+        dayCells.forEach(
+            function (cell) {
+
+                cell.remove();
+
+            }
+        );
+
+
+        document.getElementById(
+            "monthTitle"
+        ).textContent =
+            `${currentYear}년 ${currentMonth + 1}월`;
+
+
+        const firstDay =
+            new Date(
+                currentYear,
+                currentMonth,
+                1
+            ).getDay();
+
+
+        const lastDate =
+            new Date(
+                currentYear,
+                currentMonth + 1,
+                0
+            ).getDate();
+
+
+        /* 빈 칸 */
+
+        for (
+            let i = 0;
+            i < firstDay;
+            i++
+        ) {
+
+            const emptyCell =
+                document.createElement("div");
+
+            emptyCell.className = "day";
+
+            calendar.appendChild(
+                emptyCell
+            );
+
+        }
+
+
+        /* 날짜 */
+
+        for (
+            let day = 1;
+            day <= lastDate;
+            day++
+        ) {
+
+            const dayCell =
+                document.createElement("div");
+
+            dayCell.className = "day";
+
+
+            const today =
+                new Date();
+
+
+            /* 오늘 */
+
+            if (
+                currentYear ===
+                    today.getFullYear() &&
+                currentMonth ===
+                    today.getMonth() &&
+                day ===
+                    today.getDate()
+            ) {
+
+                dayCell.classList.add(
+                    "today"
+                );
+
+            }
+
+
+            const dateKey =
+                `${currentYear}-${currentMonth + 1}-${day}`;
+
+
+            /* 선택된 날짜 */
+
+            if (
+                selectedDateKey === dateKey
+            ) {
+
+                dayCell.classList.add(
+                    "selected"
+                );
+
+            }
+
+
+            dayCell.textContent =
+                day;
+
+
+            /* 일정 개수 */
+
+            if (
+                todos[dateKey] &&
+                todos[dateKey].length > 0
+            ) {
+
+                const todoCount =
+                    document.createElement(
+                        "div"
+                    );
+
+                todoCount.textContent =
+                    `${todos[dateKey].length}개`;
+
+                todoCount.className =
+                    "todo-count";
+
+                dayCell.appendChild(
+                    todoCount
+                );
+
+            }
+
+
+            /* 날짜 클릭 */
+
+            dayCell.addEventListener(
+                "click",
+                function () {
+
+                    document
+                        .querySelectorAll(
+                            ".day.selected"
+                        )
+                        .forEach(
+                            function (cell) {
+
+                                cell.classList.remove(
+                                    "selected"
+                                );
+
+                            }
+                        );
+
+
+                    dayCell.classList.add(
+                        "selected"
+                    );
+
+
+                    selectedDateKey =
+                        dateKey;
+
+
+                    document.getElementById(
+                        "selectedDateTitle"
+                    ).textContent =
+                        `${currentYear}년 ${currentMonth + 1}월 ${day}일`;
+
+
+                    editingTodoIndex =
+                        null;
+
+
+                    document.getElementById(
+                        "todoInput"
+                    ).value = "";
+
+
+                    document.getElementById(
+                        "todoCategory"
+                    ).value = "";
+
+
+                    document.getElementById(
+                        "addTodo"
+                    ).textContent =
+                        "추가";
+
+
+                    renderTodoList();
+
+                }
+            );
+
+
+            /* =========================
+               다른 날짜로 드래그
+            ========================= */
+
+            dayCell.addEventListener(
+                "dragover",
+                function (event) {
+
+                    event.preventDefault();
+
+                    dayCell.classList.add(
+                        "drag-over"
+                    );
+
+                }
+            );
+
+
+            dayCell.addEventListener(
+                "dragleave",
+                function () {
+
+                    dayCell.classList.remove(
+                        "drag-over"
+                    );
+
+                }
+            );
+
+
+            dayCell.addEventListener(
+                "drop",
+                function (event) {
+
+                    event.preventDefault();
+
+                    dayCell.classList.remove(
+                        "drag-over"
+                    );
+
+
+                    if (
+                        draggedTodoIndex === null ||
+                        draggedTodoDateKey === null
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const sourceTodos =
+                        todos[
+                            draggedTodoDateKey
+                        ] || [];
+
+
+                    const movedTodo =
+                        sourceTodos.splice(
+                            draggedTodoIndex,
+                            1
+                        )[0];
+
+
+                    if (!movedTodo) {
+
+                        return;
+
+                    }
+
+
+                    /* 같은 날짜에 놓은 경우 */
+
+                    if (
+                        draggedTodoDateKey ===
+                        dateKey
+                    ) {
+
+                        sourceTodos.push(
+                            movedTodo
+                        );
+
+                    }
+
+                    /* 다른 날짜 */
+
+                    else {
+
+                        if (
+                            !todos[dateKey]
+                        ) {
+
+                            todos[dateKey] =
+                                [];
+
+                        }
+
+                        todos[dateKey].push(
+                            movedTodo
+                        );
+
+                    }
+
+
+                    /* 빈 날짜 데이터 정리 */
+
+                    if (
+                        sourceTodos.length === 0
+                    ) {
+
+                        delete todos[
+                            draggedTodoDateKey
+                        ];
+
+                    }
+
+
+                    saveTodos();
+
+
+                    draggedTodoIndex =
+                        null;
+
+                    draggedTodoDateKey =
+                        null;
+
+
+                    renderCalendar();
+
+
+                    if (
+                        selectedDateKey ===
+                        draggedTodoDateKey
+                    ) {
+
+                        renderTodoList();
+
+                    }
+                    else {
+
+                        renderTodoList();
+
+                    }
+
+                }
+            );
+
+
+            calendar.appendChild(
+                dayCell
+            );
+
+        }
+
+    }
+
+
+    /* =========================
+       이전 달
+    ========================= */
+
+    document
+        .getElementById("prevMonth")
+        .addEventListener(
+            "click",
+            function () {
+
+                currentMonth--;
+
+                if (
+                    currentMonth < 0
+                ) {
+
+                    currentMonth = 11;
+
+                    currentYear--;
+
+                }
+
+                renderCalendar();
+
+            }
+        );
+
+
+    /* =========================
+       다음 달
+    ========================= */
+
+    document
+        .getElementById("nextMonth")
+        .addEventListener(
+            "click",
+            function () {
+
+                currentMonth++;
+
+                if (
+                    currentMonth > 11
+                ) {
+
+                    currentMonth = 0;
+
+                    currentYear++;
+
+                }
+
+                renderCalendar();
+
+            }
+        );
+
+
+    /* =========================
+       일정 저장
+    ========================= */
+
+    function saveTodos() {
+
+        localStorage.setItem(
+            "myTodos",
+            JSON.stringify(todos)
+        );
+
+    }
+
+
+    /* =========================
+       일정 정렬
+       
+       미완료 → 완료 순서
+       ========================= */
+
+    function sortTodos(dateTodos) {
+
+        dateTodos.sort(
+            function (a, b) {
+
+                if (
+                    a.completed &&
+                    !b.completed
+                ) {
+
+                    return 1;
+
+                }
+
+
+                if (
+                    !a.completed &&
+                    b.completed
+                ) {
+
+                    return -1;
+
+                }
+
+
+                return 0;
+
+            }
+        );
+
+    }
+
+
+    /* =========================
+       일정 목록 표시
+    ========================= */
+
+    function renderTodoList() {
+
+        const todoList =
+            document.getElementById(
+                "todoList"
+            );
+
+        todoList.innerHTML = "";
+
+
+        if (!selectedDateKey) {
+
+            return;
+
+        }
+
+
+        const dateTodos =
+            todos[selectedDateKey] || [];
+
+
+        /* 완료 일정은 항상 아래로 */
+
+        sortTodos(dateTodos);
+
+
+        /* 정렬된 상태 저장 */
+
+        if (
+            dateTodos.length > 0
+        ) {
+
+            saveTodos();
+
+        }
+
+
+        const groupedTodos = {};
+
+
+        /* 카테고리별 분류 */
+
+        dateTodos.forEach(
+            function (todo) {
+
+                const category =
+                    todo.category || "미분류";
+
+
+                if (
+                    !groupedTodos[category]
+                ) {
+
+                    groupedTodos[category] =
+                        [];
+
+                }
+
+
+                groupedTodos[category].push(
+                    todo
+                );
+
+            }
+        );
+
+
+        /* 카테고리별 출력 */
+
+        Object.keys(
+            groupedTodos
+        ).forEach(
+            function (category) {
+
+                const group =
+                    document.createElement(
+                        "div"
+                    );
+
+                group.className =
+                    "todo-category-group";
+
+
+                const title =
+                    document.createElement(
+                        "div"
+                    );
+
+                title.className =
+                    "todo-category-title";
+
+                title.textContent =
+                    category;
+
+
+                group.appendChild(
+                    title
+                );
+
+
+                groupedTodos[category]
+                    .forEach(
+                        function (todo) {
+
+                            const index =
+                                dateTodos.indexOf(
+                                    todo
+                                );
+
+
+                            const todoItem =
+                                document.createElement(
+                                    "div"
+                                );
+
+                            todoItem.className =
+                                "todo-item";
+
+
+                            /* 드래그 가능 */
+
+                            todoItem.draggable =
+                                true;
+
+
+                            /* =====================
+                               드래그 시작
+                            ===================== */
+
+                            todoItem.addEventListener(
+                                "dragstart",
+                                function (event) {
+
+                                    draggedTodoIndex =
+                                        index;
+
+                                    draggedTodoDateKey =
+                                        selectedDateKey;
+
+
+                                    todoItem.classList.add(
+                                        "dragging"
+                                    );
+
+
+                                    event.dataTransfer.effectAllowed =
+                                        "move";
+
+                                    event.dataTransfer.setData(
+                                        "text/plain",
+                                        "todo"
+                                    );
+
+                                }
+                            );
+
+
+                            /* =====================
+                               드래그 종료
+                            ===================== */
+
+                            todoItem.addEventListener(
+                                "dragend",
+                                function () {
+
+                                    todoItem.classList.remove(
+                                        "dragging"
+                                    );
+
+
+                                    document
+                                        .querySelectorAll(
+                                            ".todo-item.drag-over"
+                                        )
+                                        .forEach(
+                                            function (item) {
+
+                                                item.classList.remove(
+                                                    "drag-over"
+                                                );
+
+                                            }
+                                        );
+
+                                }
+                            );
+
+
+                            /* =====================
+                               같은 날 순서 변경
+                            ===================== */
+
+                            todoItem.addEventListener(
+                                "dragover",
+                                function (event) {
+
+                                    event.preventDefault();
+
+
+                                    if (
+                                        draggedTodoDateKey !==
+                                        selectedDateKey
+                                    ) {
+
+                                        return;
+
+                                    }
+
+
+                                    if (
+                                        draggedTodoIndex ===
+                                        index
+                                    ) {
+
+                                        return;
+
+                                    }
+
+
+                                    todoItem.classList.add(
+                                        "drag-over"
+                                    );
+
+                                }
+                            );
+
+
+                            todoItem.addEventListener(
+                                "dragleave",
+                                function () {
+
+                                    todoItem.classList.remove(
+                                        "drag-over"
+                                    );
+
+                                }
+                            );
+
+
+                            todoItem.addEventListener(
+                                "drop",
+                                function (event) {
+
+                                    event.preventDefault();
+
+                                    event.stopPropagation();
+
+
+                                    todoItem.classList.remove(
+                                        "drag-over"
+                                    );
+
+
+                                    if (
+                                        draggedTodoDateKey !==
+                                        selectedDateKey
+                                    ) {
+
+                                        return;
+
+                                    }
+
+
+                                    if (
+                                        draggedTodoIndex ===
+                                        index
+                                    ) {
+
+                                        return;
+
+                                    }
+
+
+                                    const currentTodos =
+                                        todos[
+                                            selectedDateKey
+                                        ];
+
+
+                                    const movedTodo =
+                                        currentTodos.splice(
+                                            draggedTodoIndex,
+                                            1
+                                        )[0];
+
+
+                                    let targetIndex =
+                                        index;
+
+
+                                    /*
+                                      원래 위치가
+                                      목표보다 위였다면
+                                      하나 빠졌으므로
+                                      위치를 하나 줄임
+                                    */
+
+                                    if (
+                                        draggedTodoIndex <
+                                        targetIndex
+                                    ) {
+
+                                        targetIndex--;
+
+                                    }
+
+
+                                    currentTodos.splice(
+                                        targetIndex,
+                                        0,
+                                        movedTodo
+                                    );
+
+
+                                    /*
+                                      완료 일정은
+                                      완료 상태끼리만
+                                      순서를 유지
+                                    */
+
+                                    sortTodos(
+                                        currentTodos
+                                    );
+
+
+                                    saveTodos();
+
+
+                                    draggedTodoIndex =
+                                        null;
+
+                                    draggedTodoDateKey =
+                                        null;
+
+
+                                    renderTodoList();
+
+                                    renderCalendar();
+
+                                }
+                            );
+
+
+                            /* =====================
+                               체크박스
+                            ===================== */
+
+                            const checkbox =
+                                document.createElement(
+                                    "input"
+                                );
+
+                            checkbox.type =
+                                "checkbox";
+
+                            checkbox.checked =
+                                todo.completed;
+
+
+                            checkbox.addEventListener(
+                                "change",
+                                function (event) {
+
+                                    /*
+                                      체크박스 클릭이
+                                      드래그로 인식되지 않도록
+                                    */
+
+                                    event.stopPropagation();
+
+
+                                    todo.completed =
+                                        checkbox.checked;
+
+
+                                    /*
+                                      완료하면 자동으로
+                                      맨 아래로 이동
+                                    */
+
+                                    sortTodos(
+                                        dateTodos
+                                    );
+
+
+                                    saveTodos();
+
+                                    renderTodoList();
+
+                                    renderCalendar();
+
+                                }
+                            );
+
+
+                            /* =====================
+                               일정 텍스트
+                            ===================== */
+
+                            const todoText =
+                                document.createElement(
+                                    "span"
+                                );
+
+                            todoText.textContent =
+                                todo.text;
+
+
+                            if (
+                                todo.completed
+                            ) {
+
+                                todoText.style.textDecoration =
+                                    "line-through";
+
+                                todoText.style.color =
+                                    "#999";
+
+                            }
+
+
+                            /* 일정 수정 */
+
+                            todoText.addEventListener(
+                                "click",
+                                function (event) {
+
+                                    event.stopPropagation();
+
+
+                                    editingTodoIndex =
+                                        index;
+
+
+                                    document.getElementById(
+                                        "todoInput"
+                                    ).value =
+                                        todo.text;
+
+
+                                    document.getElementById(
+                                        "todoCategory"
+                                    ).value =
+                                        todo.category || "";
+
+
+                                    document.getElementById(
+                                        "addTodo"
+                                    ).textContent =
+                                        "수정";
+
+                                }
+                            );
+
+
+                            /* =====================
+                               삭제 버튼
+                            ===================== */
+
+                            const deleteButton =
+                                document.createElement(
+                                    "button"
+                                );
+
+                            deleteButton.textContent =
+                                "삭제";
+
+
+                            deleteButton.addEventListener(
+                                "click",
+                                function (event) {
+
+                                    event.stopPropagation();
+
+
+                                    dateTodos.splice(
+                                        index,
+                                        1
+                                    );
+
+
+                                    if (
+                                        dateTodos.length === 0
+                                    ) {
+
+                                        delete todos[
+                                            selectedDateKey
+                                        ];
+
+                                    }
+
+
+                                    saveTodos();
+
+                                    renderTodoList();
+
+                                    renderCalendar();
+
+                                }
+                            );
+
+
+                            todoItem.appendChild(
+                                checkbox
+                            );
+
+                            todoItem.appendChild(
+                                todoText
+                            );
+
+                            todoItem.appendChild(
+                                deleteButton
+                            );
+
+
+                            group.appendChild(
+                                todoItem
+                            );
+
+                        }
+                    );
+
+
+                todoList.appendChild(
+                    group
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =========================
+       일정 추가 / 수정
+    ========================= */
+
+    document
+        .getElementById("addTodo")
+        .addEventListener(
+            "click",
+            function () {
+
+                if (!selectedDateKey) {
+
+                    alert(
+                        "먼저 날짜를 선택해주세요."
+                    );
+
+                    return;
+
+                }
+
+
+                const input =
+                    document.getElementById(
+                        "todoInput"
+                    );
+
+
+                const todoText =
+                    input.value.trim();
+
+
+                const category =
+                    document.getElementById(
+                        "todoCategory"
+                    ).value;
+
+
+                if (!todoText) {
+
+                    alert(
+                        "할 일을 입력해주세요."
+                    );
+
+                    return;
+
+                }
+
+
+                if (!category) {
+
+                    alert(
+                        "카테고리를 선택해주세요."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    !todos[selectedDateKey]
+                ) {
+
+                    todos[selectedDateKey] =
+                        [];
+
+                }
+
+
+                /* =====================
+                   일정 수정
+                ===================== */
+
+                if (
+                    editingTodoIndex !== null
+                ) {
+
+                    todos[selectedDateKey][
+                        editingTodoIndex
+                    ].text =
+                        todoText;
+
+
+                    todos[selectedDateKey][
+                        editingTodoIndex
+                    ].category =
+                        category;
+
+
+                    saveTodos();
+
+
+                    editingTodoIndex =
+                        null;
+
+
+                    input.value = "";
+
+
+                    document.getElementById(
+                        "todoCategory"
+                    ).value = "";
+
+
+                    document.getElementById(
+                        "addTodo"
+                    ).textContent =
+                        "추가";
+
+
+                    renderTodoList();
+
+                    renderCalendar();
+
+
+                    return;
+
+                }
+
+
+                /* =====================
+                   일정 새로 추가
+                ===================== */
+
+                todos[selectedDateKey].push({
+
+                    text:
+                        todoText,
+
+                    category:
+                        category,
+
+                    completed:
+                        false
+
+                });
+
+
+                saveTodos();
+
+
+                input.value = "";
+
+
+                document.getElementById(
+                    "todoCategory"
+                ).value = "";
+
+
+                renderTodoList();
+
+                renderCalendar();
+
+            }
+        );
+
+
+    /* =========================
+       Enter로 일정 추가
+    ========================= */
+
+    document
+        .getElementById("todoInput")
+        .addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter"
+                ) {
+
+                    document
+                        .getElementById(
+                            "addTodo"
+                        )
+                        .click();
+
+                }
+
+            }
+        );
+
+
+    /* =========================
+       초기 실행
+    ========================= */
+
+    renderCalendar();
+
+    renderCategories();
+
+    renderTodoCategories();
+
+</script>
+
+</body>
+
+</html>
