@@ -1,2546 +1,1066 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8">
-    <title>My Todo</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f4f1">
+<title>My Todo</title>
+<style>
+:root{
+    --bg:#f4f4f1;
+    --card:#ffffff;
+    --soft:#f8f8f6;
+    --line:#e8e8e4;
+    --text:#171717;
+    --muted:#8a8a84;
+    --accent:#1f1f1d;
+    --shadow:0 14px 40px rgba(20,20,18,.06);
+}
 
-    <style>
+*{box-sizing:border-box}
 
-        * {
-            box-sizing: border-box;
-        }
+html{min-height:100%;background:var(--bg)}
 
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            min-height: 100vh;
-        }
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    color:var(--text);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+}
 
-        .app {
-            width: min(1400px, 100%);
-            min-height: calc(100vh - 40px);
-            margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 15px;
-            display: flex;
-            gap: 40px;
-        }
+button,input,select{font:inherit}
 
-        /* =========================
-           달력
-        ========================= */
+button{color:inherit}
 
-        .calendar-section {
-            flex: 1.5;
-            min-width: 0;
-        }
+.app{
+    width:min(1440px,100%);
+    min-height:100vh;
+    margin:0 auto;
+    padding:34px 38px 40px;
+}
 
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+/* ---------- top ---------- */
 
-        .calendar-header button {
-            border: none;
-            background: none;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 5px 10px;
-        }
+.app-topbar{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-bottom:28px;
+}
 
-        .calendar-header button:hover {
-            background-color: #f5f5f5;
-            border-radius: 8px;
-        }
+.brand-wrap h1{
+    margin:0;
+    font-size:30px;
+    line-height:1;
+    letter-spacing:-1.2px;
+    font-weight:760;
+}
 
-        #monthTitle {
-            font-size: 22px;
-            font-weight: bold;
-        }
+.brand-wrap p{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:13px;
+}
 
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-            width: 100%;
-        }
+.account-area{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
 
-        .weekday {
-            text-align: center;
-            font-weight: bold;
-            padding: 10px 0;
-        }
+.account-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-height:38px;
+    padding:0 13px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(255,255,255,.75);
+    color:#555;
+    font-size:12px;
+}
 
-        .day {
-            min-height: 105px;
-            border: 1px solid #eeeeee;
-            border-radius: 8px;
-            padding: 8px;
-            cursor: pointer;
-            text-align: left;
-            position: relative;
-            transition: background-color 0.15s;
-        }
+.account-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#5ca77a;
+}
 
-        .day:hover {
-            background-color: #f5f5f5;
-        }
+#logoutButton{
+    border:0;
+    background:transparent;
+    color:#888;
+    font-size:12px;
+    cursor:pointer;
+    padding:8px 4px;
+}
 
-        .day.selected {
-            background-color: #f5f5f5;
-        }
+#logoutButton:hover{color:var(--text)}
 
-        .day.today {
-            border: 1px solid #222;
-        }
+/* ---------- main layout ---------- */
 
-        .todo-count {
-            font-size: 12px;
-            margin-top: 8px;
-            text-align: center;
-            display: block;
-            color: #666;
-        }
+.workspace{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(360px,.9fr);
+    gap:22px;
+    align-items:stretch;
+}
 
-        /* 다른 날짜로 드래그 중일 때 */
-        .day.drag-over {
-            background-color: #eaeaea;
-            border: 2px dashed #555;
-        }
+.panel{
+    background:var(--card);
+    border:1px solid rgba(0,0,0,.025);
+    border-radius:28px;
+    box-shadow:var(--shadow);
+}
 
-        /* =========================
-           할 일 영역
-        ========================= */
+/* ---------- calendar ---------- */
 
-        .todo-section {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
+.calendar-section{
+    padding:30px;
+    min-width:0;
+}
 
-        #selectedDateTitle {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
+.calendar-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:24px;
+}
 
-        /* =========================
-           카테고리 관리
-        ========================= */
+.month-heading{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+}
 
-        .category-manager {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
+.month-kicker{
+    color:var(--muted);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:650;
+}
 
-        #categoryInput {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
+#monthTitle{
+    font-size:27px;
+    font-weight:760;
+    letter-spacing:-1px;
+}
 
-        #addCategory {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: #eee;
-            cursor: pointer;
-        }
+.month-nav{
+    display:flex;
+    gap:6px;
+}
 
-        #addCategory:hover {
-            background-color: #ddd;
-        }
+.calendar-header button{
+    width:38px;
+    height:38px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fff;
+    cursor:pointer;
+    font-size:21px;
+    line-height:1;
+    transition:.15s ease;
+}
 
-        #categoryList {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
+.calendar-header button:hover{
+    background:var(--soft);
+    transform:translateY(-1px);
+}
 
-        .category-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 5px 10px;
-            background-color: #f5f5f5;
-            border-radius: 15px;
-            font-size: 13px;
-        }
+.calendar{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    gap:8px;
+    width:100%;
+}
 
-        .category-delete {
-            border: none;
-            background: none;
-            color: #999;
-            cursor: pointer;
-            padding: 0;
-        }
+.weekday{
+    padding:0 0 9px;
+    text-align:center;
+    color:#aaa9a3;
+    font-size:11px;
+    font-weight:700;
+}
 
-        .category-delete:hover {
-            color: #ff4444;
-        }
+.day{
+    min-height:112px;
+    padding:11px;
+    border:1px solid var(--line);
+    border-radius:17px;
+    background:#fff;
+    cursor:pointer;
+    position:relative;
+    text-align:left;
+    transition:background .15s ease,border-color .15s ease,transform .15s ease;
+    overflow:hidden;
+}
 
-        /* =========================
-           할 일 입력
-        ========================= */
+.day:hover{
+    background:#fafaf8;
+    border-color:#dcdcd7;
+    transform:translateY(-1px);
+}
 
-        .todo-input-area {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+.day.selected{
+    background:#f1f1ed;
+    border-color:#d6d6d0;
+}
 
-        #todoCategory {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            background-color: white;
-            cursor: pointer;
-        }
+.day.today{
+    border-color:#222;
+}
 
-        #todoInput {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
+.day > div:first-child{
+    font-size:13px;
+    font-weight:650;
+}
 
-        #addTodo {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 8px;
-            background-color: #222;
-            color: white;
-            cursor: pointer;
-        }
+.todo-count{
+    display:inline-flex;
+    align-items:center;
+    margin-top:13px;
+    padding:5px 8px;
+    border-radius:999px;
+    background:#f4f4f1;
+    color:#77766f;
+    font-size:10px;
+    font-weight:650;
+}
 
-        #addTodo:hover {
-            background-color: #444;
-        }
+.day.today .todo-count{
+    background:#e9e9e3;
+}
 
-        /* =========================
-           할 일 목록
-        ========================= */
+.day.drag-over{
+    background:#efefeb;
+    border:2px dashed #aaa9a2;
+}
 
-        #todoList {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-        }
+/* ---------- todo panel ---------- */
 
-        .todo-category-group {
-            margin-bottom: 25px;
-        }
+.todo-section{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    padding:30px;
+}
 
-        .todo-category-title {
-            font-size: 15px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eeeeee;
-        }
+.todo-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:15px;
+    margin-bottom:22px;
+}
 
-        .todo-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 5px;
-            border-bottom: 1px solid #eeeeee;
-            background-color: white;
-            cursor: grab;
-            transition: background-color 0.15s;
-        }
+.todo-header small{
+    display:block;
+    margin-bottom:7px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:650;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+}
 
-        .todo-item:hover {
-            background-color: #fafafa;
-        }
+#selectedDateTitle{
+    font-size:24px;
+    line-height:1.15;
+    font-weight:760;
+    letter-spacing:-.7px;
+}
 
-        .todo-item:active {
-            cursor: grabbing;
-        }
+.todo-total{
+    min-width:40px;
+    height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:14px;
+    background:#f4f4f1;
+    color:#777;
+    font-size:12px;
+    font-weight:700;
+}
 
-        .todo-item.dragging {
-            opacity: 0.4;
-            background-color: #f5f5f5;
-        }
+.category-manager{
+    display:flex;
+    gap:8px;
+    margin-bottom:10px;
+}
 
-        .todo-item.drag-over {
-            border-top: 2px solid #222;
-        }
+#categoryInput,
+#todoInput,
+#todoCategory{
+    border:1px solid var(--line);
+    background:#fafaf8;
+    outline:none;
+    color:var(--text);
+    transition:border-color .15s ease,background .15s ease;
+}
 
-        .todo-item input[type="checkbox"] {
-            flex-shrink: 0;
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
+#categoryInput:focus,
+#todoInput:focus,
+#todoCategory:focus{
+    border-color:#bdbdb6;
+    background:#fff;
+}
 
-        .todo-item span {
-            flex: 1;
-            cursor: pointer;
-            word-break: break-word;
-        }
+#categoryInput{
+    width:100%;
+    padding:12px 13px;
+    border-radius:13px;
+    font-size:13px;
+}
 
-        .todo-item span:hover {
-            text-decoration: underline;
-        }
+#addCategory{
+    flex:none;
+    padding:0 14px;
+    border:0;
+    border-radius:13px;
+    background:#f0f0ec;
+    color:#666;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:650;
+}
 
-        .todo-item button {
-            border: none;
-            background: none;
-            color: #999;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
+#addCategory:hover{background:#e8e8e3}
 
-        .todo-item button:hover {
-            color: #ff4444;
-        }
+#categoryList{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    min-height:30px;
+    margin-bottom:19px;
+}
 
-        /* =========================
-           반응형
-        ========================= */
+.category-item{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    padding:6px 9px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:#fff;
+    color:#666;
+    font-size:11px;
+}
 
-        @media (max-width: 900px) {
+.category-delete{
+    width:16px;
+    height:16px;
+    padding:0;
+    border:0;
+    border-radius:50%;
+    background:transparent;
+    color:#aaa;
+    cursor:pointer;
+}
 
-            body {
-                padding: 10px;
-            }
+.category-delete:hover{background:#f1f1ed;color:#555}
 
-            .app {
-                min-height: calc(100vh - 20px);
-                padding: 20px;
-                flex-direction: column;
-            }
+.todo-input-area{
+    display:grid;
+    grid-template-columns:110px minmax(0,1fr) 48px;
+    gap:7px;
+    margin-bottom:20px;
+}
 
-            .day {
-                min-height: 70px;
-            }
+#todoCategory,
+#todoInput{
+    width:100%;
+    min-width:0;
+    padding:12px 12px;
+    border-radius:13px;
+    font-size:12px;
+}
 
-        }
+#addTodo{
+    border:0;
+    border-radius:13px;
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:700;
+    transition:.15s ease;
+}
 
-    </style>
+#addTodo:hover{
+    background:#373733;
+    transform:translateY(-1px);
+}
 
+#todoList{
+    flex:1;
+    min-height:260px;
+    overflow-y:auto;
+    padding-right:3px;
+}
+
+#todoList::-webkit-scrollbar{width:5px}
+#todoList::-webkit-scrollbar-thumb{background:#ddd;border-radius:10px}
+
+.todo-category-group{
+    margin-bottom:20px;
+}
+
+.todo-category-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+    color:#8b8a84;
+    font-size:11px;
+    font-weight:750;
+}
+
+.todo-category-title::before{
+    content:"";
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:#c9c9c3;
+}
+
+.todo-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:11px 10px;
+    margin-bottom:7px;
+    border:1px solid #eeeeea;
+    border-radius:14px;
+    background:#fff;
+    cursor:grab;
+    transition:.15s ease;
+}
+
+.todo-item:hover{
+    border-color:#deded9;
+    background:#fafaf8;
+}
+
+.todo-item:active{cursor:grabbing}
+
+.todo-item.dragging{
+    opacity:.4;
+    transform:scale(.99);
+}
+
+.todo-item.drag-over{
+    border-top:2px solid #333;
+}
+
+.todo-item input[type=checkbox]{
+    appearance:none;
+    width:17px;
+    height:17px;
+    flex:0 0 17px;
+    margin:0;
+    border:1.5px solid #c9c9c3;
+    border-radius:6px;
+    background:#fff;
+    cursor:pointer;
+    position:relative;
+}
+
+.todo-item input[type=checkbox]:checked{
+    background:#20201e;
+    border-color:#20201e;
+}
+
+.todo-item input[type=checkbox]:checked::after{
+    content:"✓";
+    position:absolute;
+    left:2px;
+    top:-1px;
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+}
+
+.todo-item span{
+    flex:1;
+    min-width:0;
+    color:#30302d;
+    font-size:13px;
+    line-height:1.35;
+    cursor:pointer;
+    word-break:break-word;
+}
+
+.todo-item span:hover{text-decoration:none}
+
+.todo-item button{
+    flex:none;
+    border:0;
+    background:transparent;
+    color:#bbb;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    padding:3px;
+}
+
+.todo-item button:hover{color:#555}
+
+/* ---------- login ---------- */
+
+#loginScreen,
+#authSuccessScreen{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    background:rgba(244,244,241,.98);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+#loginScreen{
+    display:none;
+}
+
+.auth-card{
+    width:min(420px,100%);
+    padding:42px;
+    background:#fff;
+    border:1px solid rgba(0,0,0,.03);
+    border-radius:28px;
+    box-shadow:0 24px 70px rgba(20,20,18,.09);
+}
+
+.auth-logo{
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:24px;
+    border-radius:15px;
+    background:#1f1f1d;
+    color:#fff;
+    font-size:20px;
+    font-weight:800;
+}
+
+.auth-card h2{
+    margin:0;
+    font-size:28px;
+    letter-spacing:-1px;
+}
+
+.auth-card p{
+    margin:9px 0 28px;
+    color:#8a8983;
+    font-size:13px;
+    line-height:1.55;
+}
+
+.auth-field{
+    width:100%;
+    padding:14px 14px;
+    margin-bottom:9px;
+    border:1px solid var(--line);
+    border-radius:13px;
+    background:#fafaf8;
+    outline:none;
+    font-size:13px;
+}
+
+.auth-field:focus{
+    border-color:#bdbdb6;
+    background:#fff;
+}
+
+.auth-primary,
+.auth-secondary{
+    width:100%;
+    padding:14px;
+    border-radius:13px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:700;
+}
+
+.auth-primary{
+    margin-top:6px;
+    border:0;
+    background:#1f1f1d;
+    color:#fff;
+}
+
+.auth-secondary{
+    margin-top:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    color:#666;
+}
+
+.auth-primary:hover{background:#353532}
+.auth-secondary:hover{background:#fafaf8}
+
+#authMessage{
+    min-height:18px;
+    margin:15px 0 0;
+    text-align:center;
+    color:#8a8983;
+    font-size:12px;
+    line-height:1.5;
+}
+
+#authSuccessScreen{
+    display:none;
+}
+
+#authSuccessScreen.show{
+    display:flex;
+}
+
+.success-icon{
+    width:62px;
+    height:62px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:22px;
+    border-radius:20px;
+    background:#edf4ee;
+    color:#4c8a61;
+    font-size:28px;
+    font-weight:800;
+}
+
+.success-card h2{margin-bottom:0}
+
+.success-card p{
+    margin-bottom:25px;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width:1000px){
+    .app{
+        padding:22px 16px 30px;
+    }
+
+    .workspace{
+        grid-template-columns:1fr;
+    }
+
+    .todo-section{
+        min-height:520px;
+    }
+}
+
+@media (max-width:640px){
+    body{
+        background:#f4f4f1;
+    }
+
+    .app{
+        padding:18px 12px 24px;
+    }
+
+    .app-topbar{
+        align-items:center;
+        margin-bottom:16px;
+    }
+
+    .brand-wrap h1{
+        font-size:25px;
+    }
+
+    .brand-wrap p{
+        display:none;
+    }
+
+    .account-pill{
+        min-height:32px;
+        padding:0 10px;
+    }
+
+    .account-pill span:last-child{
+        max-width:100px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+    }
+
+    #logoutButton{
+        display:none;
+    }
+
+    .panel{
+        border-radius:24px;
+    }
+
+    .calendar-section{
+        padding:20px 14px 18px;
+    }
+
+    .calendar-header{
+        margin-bottom:18px;
+    }
+
+    #monthTitle{
+        font-size:22px;
+    }
+
+    .month-kicker{
+        font-size:9px;
+    }
+
+    .calendar{
+        gap:5px;
+    }
+
+    .weekday{
+        padding-bottom:7px;
+        font-size:9px;
+    }
+
+    .day{
+        min-height:65px;
+        padding:8px 6px;
+        border-radius:12px;
+    }
+
+    .day > div:first-child{
+        font-size:11px;
+    }
+
+    .todo-count{
+        margin-top:7px;
+        padding:3px 5px;
+        font-size:8px;
+    }
+
+    .todo-section{
+        min-height:500px;
+        padding:20px 14px 18px;
+    }
+
+    #selectedDateTitle{
+        font-size:21px;
+    }
+
+    .todo-input-area{
+        grid-template-columns:1fr 44px;
+    }
+
+    #todoCategory{
+        display:none;
+    }
+
+    #todoList{
+        min-height:260px;
+    }
+
+    .auth-card{
+        padding:30px 24px;
+        border-radius:24px;
+    }
+}
+</style>
 </head>
 
 <body>
+<div id="loginScreen">
+    <div class="auth-card">
+        <div class="auth-logo">✓</div>
+        <h2>My Todo</h2>
+        <p>로그인하고 어디서든 내 일정을<br>안전하게 관리하세요.</p>
 
-<!-- =========================
-     로그인 화면
-========================= -->
+        <input id="loginEmail" class="auth-field" type="email" placeholder="이메일" autocomplete="email">
+        <input id="loginPassword" class="auth-field" type="password" placeholder="비밀번호" autocomplete="current-password">
 
-<div id="loginScreen" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: #f8f8f6;
-    align-items: center;
-    justify-content: center;
-">
+        <button id="loginButton" class="auth-primary" type="button">로그인</button>
+        <button id="signupButton" class="auth-secondary" type="button">회원가입</button>
 
-    <div style="
-        width: min(360px, calc(100vw - 40px));
-        padding: 40px;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        box-sizing: border-box;
-    ">
-
-        <h1 style="margin: 0 0 8px; text-align: center;">
-            My Calendar
-        </h1>
-
-        <p style="margin: 0 0 30px; text-align: center; color: #777;">
-            로그인하고 내 일정을 저장하세요
-        </p>
-
-        <input
-            id="loginEmail"
-            type="email"
-            placeholder="이메일"
-            autocomplete="email"
-            style="width: 100%; box-sizing: border-box; padding: 13px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px;"
-        >
-
-        <input
-            id="loginPassword"
-            type="password"
-            placeholder="비밀번호"
-            autocomplete="current-password"
-            style="width: 100%; box-sizing: border-box; padding: 13px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;"
-        >
-
-        <button
-            id="loginButton"
-            type="button"
-            style="width: 100%; padding: 13px; border: none; border-radius: 8px; background: #222; color: white; cursor: pointer; margin-bottom: 8px;"
-        >
-            로그인
-        </button>
-
-        <button
-            id="signupButton"
-            type="button"
-            style="width: 100%; padding: 13px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer;"
-        >
-            회원가입
-        </button>
-
-        <p id="authMessage" style="margin-top: 15px; text-align: center; font-size: 13px; color: #777;"></p>
-
+        <p id="authMessage"></p>
     </div>
+</div>
 
+<div id="authSuccessScreen">
+    <div class="auth-card success-card">
+        <div class="success-icon">✓</div>
+        <h2>이메일 인증 완료</h2>
+        <p>이메일 인증이 성공적으로 완료되었습니다.<br>이제 My Todo를 사용할 수 있습니다.</p>
+        <button id="continueAfterVerification" class="auth-primary" type="button">My Todo로 이동</button>
+    </div>
 </div>
 
 <div class="app">
-
-    <!-- =========================
-         달력
-    ========================= -->
-
-    <div class="calendar-section">
-
-        <div class="calendar-header">
-
-            <button id="prevMonth">‹</button>
-
-            <div id="monthTitle"></div>
-
-            <button id="nextMonth">›</button>
-
+    <div class="app-topbar">
+        <div class="brand-wrap">
+            <h1>My Todo</h1>
+            <p>Organize your days simply.</p>
         </div>
 
-        <div class="calendar">
-
-            <div class="weekday">일</div>
-            <div class="weekday">월</div>
-            <div class="weekday">화</div>
-            <div class="weekday">수</div>
-            <div class="weekday">목</div>
-            <div class="weekday">금</div>
-            <div class="weekday">토</div>
-
+        <div class="account-area">
+            <div class="account-pill">
+                <span class="account-dot"></span>
+                <span id="accountEmail">로그인됨</span>
+            </div>
+            <button id="logoutButton" type="button">로그아웃</button>
         </div>
-
     </div>
 
+    <div class="workspace">
+        <section class="panel calendar-section">
+            <div class="calendar-header">
+                <div class="month-heading">
+                    <span class="month-kicker">Calendar</span>
+                    <div id="monthTitle"></div>
+                </div>
+                <div class="month-nav">
+                    <button id="prevMonth" type="button" aria-label="이전 달">‹</button>
+                    <button id="nextMonth" type="button" aria-label="다음 달">›</button>
+                </div>
+            </div>
 
-    <!-- =========================
-         할 일
-    ========================= -->
+            <div class="calendar">
+                <div class="weekday">일</div>
+                <div class="weekday">월</div>
+                <div class="weekday">화</div>
+                <div class="weekday">수</div>
+                <div class="weekday">목</div>
+                <div class="weekday">금</div>
+                <div class="weekday">토</div>
+            </div>
+        </section>
 
-    <div class="todo-section">
+        <section class="panel todo-section">
+            <div class="todo-header">
+                <div>
+                    <small>Selected day</small>
+                    <div id="selectedDateTitle">날짜를 선택해주세요</div>
+                </div>
+                <div class="todo-total" id="todoTotal">0</div>
+            </div>
 
-        <div id="selectedDateTitle">
-            날짜를 선택해주세요
-        </div>
+            <div class="category-manager">
+                <input id="categoryInput" type="text" placeholder="새 카테고리">
+                <button id="addCategory" type="button">추가</button>
+            </div>
 
+            <div id="categoryList"></div>
 
-        <!-- 카테고리 관리 -->
+            <div class="todo-input-area">
+                <select id="todoCategory">
+                    <option value="">카테고리 선택</option>
+                </select>
+                <input id="todoInput" type="text" placeholder="할 일을 입력하세요">
+                <button id="addTodo" type="button">+</button>
+            </div>
 
-        <div class="category-manager">
-
-            <input
-                type="text"
-                id="categoryInput"
-                placeholder="새 카테고리 이름"
-            >
-
-            <button id="addCategory">
-                카테고리 추가
-            </button>
-
-        </div>
-
-        <div id="categoryList"></div>
-
-
-        <!-- 할 일 입력 -->
-
-        <div class="todo-input-area">
-
-            <select id="todoCategory">
-
-                <option value="">
-                    카테고리 선택
-                </option>
-
-            </select>
-
-            <input
-                type="text"
-                id="todoInput"
-                placeholder="할 일을 입력하세요"
-            >
-
-            <button id="addTodo">
-                추가
-            </button>
-
-        </div>
-
-
-        <!-- 할 일 목록 -->
-
-        <div id="todoList"></div>
-
+            <div id="todoList"></div>
+        </section>
     </div>
-
 </div>
 
 
-<script>
-
-    /* =========================
-       기본 변수
-    ========================= */
-
-    let currentYear =
-        new Date().getFullYear();
-
-    let currentMonth =
-        new Date().getMonth();
-
-    let selectedDateKey = null;
-
-    let editingTodoIndex = null;
-
-    let draggedTodoIndex = null;
-
-    let draggedTodoDateKey = null;
-
-    function formatDateKey(year, month, day) {
-
-        return [
-            year,
-            String(month).padStart(2, "0"),
-            String(day).padStart(2, "0")
-        ].join("-");
-
-    }
-
-
-    /* =========================
-       저장된 데이터 불러오기
-    ========================= */
-
-    let todos =
-        JSON.parse(
-            localStorage.getItem("myTodos")
-        ) || {};
-
-    let categories =
-        JSON.parse(
-            localStorage.getItem("myCategories")
-        ) || [];
-
-
-    /* =========================
-       카테고리 저장
-    ========================= */
-
-    function saveCategories() {
-
-        localStorage.setItem(
-            "myCategories",
-            JSON.stringify(categories)
-        );
-
-    }
-
-
-    /* =========================
-       카테고리 화면 표시
-    ========================= */
-
-    function renderCategories() {
-
-        const categoryList =
-            document.getElementById(
-                "categoryList"
-            );
-
-        categoryList.innerHTML = "";
-
-        categories.forEach(
-            function (category, index) {
-
-                const categoryItem =
-                    document.createElement("div");
-
-                categoryItem.className =
-                    "category-item";
-
-
-                const categoryName =
-                    document.createElement("span");
-
-                categoryName.textContent =
-                    category;
-
-
-                const deleteButton =
-                    document.createElement("button");
-
-                deleteButton.textContent = "×";
-
-                deleteButton.className =
-                    "category-delete";
-
-
-                deleteButton.addEventListener(
-                    "click",
-                    function () {
-
-                        categories.splice(
-                            index,
-                            1
-                        );
-
-                        saveCategories();
-
-                        renderCategories();
-
-                        renderTodoCategories();
-
-                    }
-                );
-
-
-                categoryItem.appendChild(
-                    categoryName
-                );
-
-                categoryItem.appendChild(
-                    deleteButton
-                );
-
-                categoryList.appendChild(
-                    categoryItem
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================
-       일정 카테고리 선택창
-    ========================= */
-
-    function renderTodoCategories() {
-
-        const categorySelect =
-            document.getElementById(
-                "todoCategory"
-            );
-
-        categorySelect.innerHTML = "";
-
-
-        const defaultOption =
-            document.createElement("option");
-
-        defaultOption.value = "";
-
-        defaultOption.textContent =
-            "카테고리 선택";
-
-        categorySelect.appendChild(
-            defaultOption
-        );
-
-
-        categories.forEach(
-            function (category) {
-
-                const option =
-                    document.createElement("option");
-
-                option.value =
-                    category;
-
-                option.textContent =
-                    category;
-
-                categorySelect.appendChild(
-                    option
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================
-       카테고리 추가
-    ========================= */
-
-    document
-        .getElementById("addCategory")
-        .addEventListener(
-            "click",
-            function () {
-
-                const input =
-                    document.getElementById(
-                        "categoryInput"
-                    );
-
-                const categoryName =
-                    input.value.trim();
-
-
-                if (!categoryName) {
-
-                    alert(
-                        "카테고리 이름을 입력해주세요."
-                    );
-
-                    return;
-                }
-
-
-                if (
-                    categories.includes(
-                        categoryName
-                    )
-                ) {
-
-                    alert(
-                        "이미 있는 카테고리입니다."
-                    );
-
-                    return;
-                }
-
-
-                categories.push(
-                    categoryName
-                );
-
-                saveCategories();
-
-                input.value = "";
-
-                renderCategories();
-
-                renderTodoCategories();
-
-            }
-        );
-
-
-    /* =========================
-       달력 렌더링
-    ========================= */
-
-    function renderCalendar() {
-
-        const calendar =
-            document.querySelector(
-                ".calendar"
-            );
-
-
-        const dayCells =
-            calendar.querySelectorAll(
-                ".day"
-            );
-
-
-        dayCells.forEach(
-            function (cell) {
-
-                cell.remove();
-
-            }
-        );
-
-
-        document.getElementById(
-            "monthTitle"
-        ).textContent =
-            `${currentYear}년 ${currentMonth + 1}월`;
-
-
-        const firstDay =
-            new Date(
-                currentYear,
-                currentMonth,
-                1
-            ).getDay();
-
-
-        const lastDate =
-            new Date(
-                currentYear,
-                currentMonth + 1,
-                0
-            ).getDate();
-
-
-        /* 빈 칸 */
-
-        for (
-            let i = 0;
-            i < firstDay;
-            i++
-        ) {
-
-            const emptyCell =
-                document.createElement("div");
-
-            emptyCell.className = "day";
-
-            calendar.appendChild(
-                emptyCell
-            );
-
-        }
-
-
-        /* 날짜 */
-
-        for (
-            let day = 1;
-            day <= lastDate;
-            day++
-        ) {
-
-            const dayCell =
-                document.createElement("div");
-
-            dayCell.className = "day";
-
-
-            const today =
-                new Date();
-
-
-            /* 오늘 */
-
-            if (
-                currentYear ===
-                    today.getFullYear() &&
-                currentMonth ===
-                    today.getMonth() &&
-                day ===
-                    today.getDate()
-            ) {
-
-                dayCell.classList.add(
-                    "today"
-                );
-
-            }
-
-
-            const dateKey =
-                formatDateKey(
-                    currentYear,
-                    currentMonth + 1,
-                    day
-                );
-
-
-            /* 선택된 날짜 */
-
-            if (
-                selectedDateKey === dateKey
-            ) {
-
-                dayCell.classList.add(
-                    "selected"
-                );
-
-            }
-
-
-            dayCell.textContent =
-                day;
-
-
-            /* 일정 개수 */
-
-            if (
-                todos[dateKey] &&
-                todos[dateKey].length > 0
-            ) {
-
-                const todoCount =
-                    document.createElement(
-                        "div"
-                    );
-
-                todoCount.textContent =
-                    `${todos[dateKey].length}개`;
-
-                todoCount.className =
-                    "todo-count";
-
-                dayCell.appendChild(
-                    todoCount
-                );
-
-            }
-
-
-            /* 날짜 클릭 */
-
-            dayCell.addEventListener(
-                "click",
-                function () {
-
-                    document
-                        .querySelectorAll(
-                            ".day.selected"
-                        )
-                        .forEach(
-                            function (cell) {
-
-                                cell.classList.remove(
-                                    "selected"
-                                );
-
-                            }
-                        );
-
-
-                    dayCell.classList.add(
-                        "selected"
-                    );
-
-
-                    selectedDateKey =
-                        dateKey;
-
-
-                    document.getElementById(
-                        "selectedDateTitle"
-                    ).textContent =
-                        `${currentYear}년 ${currentMonth + 1}월 ${day}일`;
-
-
-                    editingTodoIndex =
-                        null;
-
-
-                    document.getElementById(
-                        "todoInput"
-                    ).value = "";
-
-
-                    document.getElementById(
-                        "todoCategory"
-                    ).value = "";
-
-
-                    document.getElementById(
-                        "addTodo"
-                    ).textContent =
-                        "추가";
-
-
-                    renderTodoList();
-
-                }
-            );
-
-
-            /* =========================
-               다른 날짜로 드래그
-            ========================= */
-
-            dayCell.addEventListener(
-                "dragover",
-                function (event) {
-
-                    event.preventDefault();
-
-                    dayCell.classList.add(
-                        "drag-over"
-                    );
-
-                }
-            );
-
-
-            dayCell.addEventListener(
-                "dragleave",
-                function () {
-
-                    dayCell.classList.remove(
-                        "drag-over"
-                    );
-
-                }
-            );
-
-
-            dayCell.addEventListener(
-                "drop",
-                function (event) {
-
-                    event.preventDefault();
-
-                    dayCell.classList.remove(
-                        "drag-over"
-                    );
-
-
-                    if (
-                        draggedTodoIndex === null ||
-                        draggedTodoDateKey === null
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const sourceTodos =
-                        todos[
-                            draggedTodoDateKey
-                        ] || [];
-
-
-                    const movedTodo =
-                        sourceTodos.splice(
-                            draggedTodoIndex,
-                            1
-                        )[0];
-
-
-                    if (!movedTodo) {
-
-                        return;
-
-                    }
-
-
-                    /* 같은 날짜에 놓은 경우 */
-
-                    if (
-                        draggedTodoDateKey ===
-                        dateKey
-                    ) {
-
-                        sourceTodos.push(
-                            movedTodo
-                        );
-
-                    }
-
-                    /* 다른 날짜 */
-
-                    else {
-
-                        if (
-                            !todos[dateKey]
-                        ) {
-
-                            todos[dateKey] =
-                                [];
-
-                        }
-
-                        todos[dateKey].push(
-                            movedTodo
-                        );
-
-                    }
-
-
-                    /* 빈 날짜 데이터 정리 */
-
-                    if (
-                        sourceTodos.length === 0
-                    ) {
-
-                        delete todos[
-                            draggedTodoDateKey
-                        ];
-
-                    }
-
-
-                    saveTodos();
-
-
-                    draggedTodoIndex =
-                        null;
-
-                    draggedTodoDateKey =
-                        null;
-
-
-                    renderCalendar();
-
-
-                    if (
-                        selectedDateKey ===
-                        draggedTodoDateKey
-                    ) {
-
-                        renderTodoList();
-
-                    }
-                    else {
-
-                        renderTodoList();
-
-                    }
-
-                }
-            );
-
-
-            calendar.appendChild(
-                dayCell
-            );
-
-        }
-
-    }
-
-
-    /* =========================
-       이전 달
-    ========================= */
-
-    document
-        .getElementById("prevMonth")
-        .addEventListener(
-            "click",
-            function () {
-
-                currentMonth--;
-
-                if (
-                    currentMonth < 0
-                ) {
-
-                    currentMonth = 11;
-
-                    currentYear--;
-
-                }
-
-                renderCalendar();
-
-            }
-        );
-
-
-    /* =========================
-       다음 달
-    ========================= */
-
-    document
-        .getElementById("nextMonth")
-        .addEventListener(
-            "click",
-            function () {
-
-                currentMonth++;
-
-                if (
-                    currentMonth > 11
-                ) {
-
-                    currentMonth = 0;
-
-                    currentYear++;
-
-                }
-
-                renderCalendar();
-
-            }
-        );
-
-
-    /* =========================
-       일정 저장
-    ========================= */
-
-    async function saveTodos() {
-
-        /* 기존 로컬 저장도 유지 */
-        localStorage.setItem(
-            "myTodos",
-            JSON.stringify(todos)
-        );
-
-
-        /* 현재 로그인한 사용자 확인 */
-        const {
-            data: {
-                user
-            }
-        } = await supabaseClient.auth.getUser();
-
-
-        if (!user) {
-
-            console.warn(
-                "로그인한 사용자가 없어 Supabase 저장을 건너뜁니다."
-            );
-
-            return;
-
-        }
-
-
-        /*
-           현재 사용자의 기존 일정 삭제
-           → 현재 화면의 todos를 다시 저장
-
-           이렇게 하면 추가/수정/삭제/완료/날짜이동을
-           모두 한 번에 Supabase와 동기화할 수 있음
-        */
-
-        const {
-            error: deleteError
-        } = await supabaseClient
-            .from("events")
-            .delete()
-            .eq("user_id", user.id);
-
-
-        if (deleteError) {
-
-            console.error(
-                "Supabase 기존 일정 삭제 실패:",
-                deleteError
-            );
-
-            return;
-
-        }
-
-
-        const rows = [];
-
-
-        Object.keys(todos).forEach(
-            function (dateKey) {
-
-                const dateTodos =
-                    todos[dateKey] || [];
-
-
-                dateTodos.forEach(
-                    function (todo) {
-
-                        rows.push({
-
-                            user_id:
-                                user.id,
-
-                            title:
-                                todo.text || "",
-
-                            event_date:
-                                dateKey,
-
-                            category:
-                                todo.category || "",
-
-                            completed:
-                                !!todo.completed
-
-                        });
-
-                    }
-                );
-
-            }
-        );
-
-
-        if (rows.length === 0) {
-
-            console.log(
-                "저장할 일정이 없습니다."
-            );
-
-            return;
-
-        }
-
-
-        const {
-            error: insertError
-        } = await supabaseClient
-            .from("events")
-            .insert(rows);
-
-
-        if (insertError) {
-
-            console.error(
-                "Supabase 일정 저장 실패:",
-                insertError
-            );
-
-            return;
-
-        }
-
-
-        console.log(
-            "Supabase 일정 저장 완료:",
-            rows.length,
-            "개"
-        );
-
-    }
-
-
-    /* =========================
-       일정 정렬
-       
-       미완료 → 완료 순서
-       ========================= */
-
-    function sortTodos(dateTodos) {
-
-        dateTodos.sort(
-            function (a, b) {
-
-                if (
-                    a.completed &&
-                    !b.completed
-                ) {
-
-                    return 1;
-
-                }
-
-
-                if (
-                    !a.completed &&
-                    b.completed
-                ) {
-
-                    return -1;
-
-                }
-
-
-                return 0;
-
-            }
-        );
-
-    }
-
-
-    /* =========================
-       일정 목록 표시
-    ========================= */
-
-    function renderTodoList() {
-
-        const todoList =
-            document.getElementById(
-                "todoList"
-            );
-
-        todoList.innerHTML = "";
-
-
-        if (!selectedDateKey) {
-
-            return;
-
-        }
-
-
-        const dateTodos =
-            todos[selectedDateKey] || [];
-
-
-        /* 완료 일정은 항상 아래로 */
-
-        sortTodos(dateTodos);
-
-
-        /* 정렬된 상태 저장 */
-
-        if (
-            dateTodos.length > 0
-        ) {
-
-            saveTodos();
-
-        }
-
-
-        const groupedTodos = {};
-
-
-        /* 카테고리별 분류 */
-
-        dateTodos.forEach(
-            function (todo) {
-
-                const category =
-                    todo.category || "미분류";
-
-
-                if (
-                    !groupedTodos[category]
-                ) {
-
-                    groupedTodos[category] =
-                        [];
-
-                }
-
-
-                groupedTodos[category].push(
-                    todo
-                );
-
-            }
-        );
-
-
-        /* 카테고리별 출력 */
-
-        Object.keys(
-            groupedTodos
-        ).forEach(
-            function (category) {
-
-                const group =
-                    document.createElement(
-                        "div"
-                    );
-
-                group.className =
-                    "todo-category-group";
-
-
-                const title =
-                    document.createElement(
-                        "div"
-                    );
-
-                title.className =
-                    "todo-category-title";
-
-                title.textContent =
-                    category;
-
-
-                group.appendChild(
-                    title
-                );
-
-
-                groupedTodos[category]
-                    .forEach(
-                        function (todo) {
-
-                            const index =
-                                dateTodos.indexOf(
-                                    todo
-                                );
-
-
-                            const todoItem =
-                                document.createElement(
-                                    "div"
-                                );
-
-                            todoItem.className =
-                                "todo-item";
-
-
-                            /* 드래그 가능 */
-
-                            todoItem.draggable =
-                                true;
-
-
-                            /* =====================
-                               드래그 시작
-                            ===================== */
-
-                            todoItem.addEventListener(
-                                "dragstart",
-                                function (event) {
-
-                                    draggedTodoIndex =
-                                        index;
-
-                                    draggedTodoDateKey =
-                                        selectedDateKey;
-
-
-                                    todoItem.classList.add(
-                                        "dragging"
-                                    );
-
-
-                                    event.dataTransfer.effectAllowed =
-                                        "move";
-
-                                    event.dataTransfer.setData(
-                                        "text/plain",
-                                        "todo"
-                                    );
-
-                                }
-                            );
-
-
-                            /* =====================
-                               드래그 종료
-                            ===================== */
-
-                            todoItem.addEventListener(
-                                "dragend",
-                                function () {
-
-                                    todoItem.classList.remove(
-                                        "dragging"
-                                    );
-
-
-                                    document
-                                        .querySelectorAll(
-                                            ".todo-item.drag-over"
-                                        )
-                                        .forEach(
-                                            function (item) {
-
-                                                item.classList.remove(
-                                                    "drag-over"
-                                                );
-
-                                            }
-                                        );
-
-                                }
-                            );
-
-
-                            /* =====================
-                               같은 날 순서 변경
-                            ===================== */
-
-                            todoItem.addEventListener(
-                                "dragover",
-                                function (event) {
-
-                                    event.preventDefault();
-
-
-                                    if (
-                                        draggedTodoDateKey !==
-                                        selectedDateKey
-                                    ) {
-
-                                        return;
-
-                                    }
-
-
-                                    if (
-                                        draggedTodoIndex ===
-                                        index
-                                    ) {
-
-                                        return;
-
-                                    }
-
-
-                                    todoItem.classList.add(
-                                        "drag-over"
-                                    );
-
-                                }
-                            );
-
-
-                            todoItem.addEventListener(
-                                "dragleave",
-                                function () {
-
-                                    todoItem.classList.remove(
-                                        "drag-over"
-                                    );
-
-                                }
-                            );
-
-
-                            todoItem.addEventListener(
-                                "drop",
-                                function (event) {
-
-                                    event.preventDefault();
-
-                                    event.stopPropagation();
-
-
-                                    todoItem.classList.remove(
-                                        "drag-over"
-                                    );
-
-
-                                    if (
-                                        draggedTodoDateKey !==
-                                        selectedDateKey
-                                    ) {
-
-                                        return;
-
-                                    }
-
-
-                                    if (
-                                        draggedTodoIndex ===
-                                        index
-                                    ) {
-
-                                        return;
-
-                                    }
-
-
-                                    const currentTodos =
-                                        todos[
-                                            selectedDateKey
-                                        ];
-
-
-                                    const movedTodo =
-                                        currentTodos.splice(
-                                            draggedTodoIndex,
-                                            1
-                                        )[0];
-
-
-                                    let targetIndex =
-                                        index;
-
-
-                                    /*
-                                      원래 위치가
-                                      목표보다 위였다면
-                                      하나 빠졌으므로
-                                      위치를 하나 줄임
-                                    */
-
-                                    if (
-                                        draggedTodoIndex <
-                                        targetIndex
-                                    ) {
-
-                                        targetIndex--;
-
-                                    }
-
-
-                                    currentTodos.splice(
-                                        targetIndex,
-                                        0,
-                                        movedTodo
-                                    );
-
-
-                                    /*
-                                      완료 일정은
-                                      완료 상태끼리만
-                                      순서를 유지
-                                    */
-
-                                    sortTodos(
-                                        currentTodos
-                                    );
-
-
-                                    saveTodos();
-
-
-                                    draggedTodoIndex =
-                                        null;
-
-                                    draggedTodoDateKey =
-                                        null;
-
-
-                                    renderTodoList();
-
-                                    renderCalendar();
-
-                                }
-                            );
-
-
-                            /* =====================
-                               체크박스
-                            ===================== */
-
-                            const checkbox =
-                                document.createElement(
-                                    "input"
-                                );
-
-                            checkbox.type =
-                                "checkbox";
-
-                            checkbox.checked =
-                                todo.completed;
-
-
-                            checkbox.addEventListener(
-                                "change",
-                                function (event) {
-
-                                    /*
-                                      체크박스 클릭이
-                                      드래그로 인식되지 않도록
-                                    */
-
-                                    event.stopPropagation();
-
-
-                                    todo.completed =
-                                        checkbox.checked;
-
-
-                                    /*
-                                      완료하면 자동으로
-                                      맨 아래로 이동
-                                    */
-
-                                    sortTodos(
-                                        dateTodos
-                                    );
-
-
-                                    saveTodos();
-
-                                    renderTodoList();
-
-                                    renderCalendar();
-
-                                }
-                            );
-
-
-                            /* =====================
-                               일정 텍스트
-                            ===================== */
-
-                            const todoText =
-                                document.createElement(
-                                    "span"
-                                );
-
-                            todoText.textContent =
-                                todo.text;
-
-
-                            if (
-                                todo.completed
-                            ) {
-
-                                todoText.style.textDecoration =
-                                    "line-through";
-
-                                todoText.style.color =
-                                    "#999";
-
-                            }
-
-
-                            /* 일정 수정 */
-
-                            todoText.addEventListener(
-                                "click",
-                                function (event) {
-
-                                    event.stopPropagation();
-
-
-                                    editingTodoIndex =
-                                        index;
-
-
-                                    document.getElementById(
-                                        "todoInput"
-                                    ).value =
-                                        todo.text;
-
-
-                                    document.getElementById(
-                                        "todoCategory"
-                                    ).value =
-                                        todo.category || "";
-
-
-                                    document.getElementById(
-                                        "addTodo"
-                                    ).textContent =
-                                        "수정";
-
-                                }
-                            );
-
-
-                            /* =====================
-                               삭제 버튼
-                            ===================== */
-
-                            const deleteButton =
-                                document.createElement(
-                                    "button"
-                                );
-
-                            deleteButton.textContent =
-                                "삭제";
-
-
-                            deleteButton.addEventListener(
-                                "click",
-                                function (event) {
-
-                                    event.stopPropagation();
-
-
-                                    dateTodos.splice(
-                                        index,
-                                        1
-                                    );
-
-
-                                    if (
-                                        dateTodos.length === 0
-                                    ) {
-
-                                        delete todos[
-                                            selectedDateKey
-                                        ];
-
-                                    }
-
-
-                                    saveTodos();
-
-                                    renderTodoList();
-
-                                    renderCalendar();
-
-                                }
-                            );
-
-
-                            todoItem.appendChild(
-                                checkbox
-                            );
-
-                            todoItem.appendChild(
-                                todoText
-                            );
-
-                            todoItem.appendChild(
-                                deleteButton
-                            );
-
-
-                            group.appendChild(
-                                todoItem
-                            );
-
-                        }
-                    );
-
-
-                todoList.appendChild(
-                    group
-                );
-
-            }
-        );
-
-    }
-
-
-    /* =========================
-       일정 추가 / 수정
-    ========================= */
-
-    document
-        .getElementById("addTodo")
-        .addEventListener(
-            "click",
-            function () {
-
-                if (!selectedDateKey) {
-
-                    alert(
-                        "먼저 날짜를 선택해주세요."
-                    );
-
-                    return;
-
-                }
-
-
-                const input =
-                    document.getElementById(
-                        "todoInput"
-                    );
-
-
-                const todoText =
-                    input.value.trim();
-
-
-                const category =
-                    document.getElementById(
-                        "todoCategory"
-                    ).value;
-
-
-                if (!todoText) {
-
-                    alert(
-                        "할 일을 입력해주세요."
-                    );
-
-                    return;
-
-                }
-
-
-                if (!category) {
-
-                    alert(
-                        "카테고리를 선택해주세요."
-                    );
-
-                    return;
-
-                }
-
-
-                if (
-                    !todos[selectedDateKey]
-                ) {
-
-                    todos[selectedDateKey] =
-                        [];
-
-                }
-
-
-                /* =====================
-                   일정 수정
-                ===================== */
-
-                if (
-                    editingTodoIndex !== null
-                ) {
-
-                    todos[selectedDateKey][
-                        editingTodoIndex
-                    ].text =
-                        todoText;
-
-
-                    todos[selectedDateKey][
-                        editingTodoIndex
-                    ].category =
-                        category;
-
-
-                    saveTodos();
-
-
-                    editingTodoIndex =
-                        null;
-
-
-                    input.value = "";
-
-
-                    document.getElementById(
-                        "todoCategory"
-                    ).value = "";
-
-
-                    document.getElementById(
-                        "addTodo"
-                    ).textContent =
-                        "추가";
-
-
-                    renderTodoList();
-
-                    renderCalendar();
-
-
-                    return;
-
-                }
-
-
-                /* =====================
-                   일정 새로 추가
-                ===================== */
-
-                todos[selectedDateKey].push({
-
-                    text:
-                        todoText,
-
-                    category:
-                        category,
-
-                    completed:
-                        false
-
-                });
-
-
-                saveTodos();
-
-
-                input.value = "";
-
-
-                document.getElementById(
-                    "todoCategory"
-                ).value = "";
-
-
-                renderTodoList();
-
-                renderCalendar();
-
-            }
-        );
-
-
-    /* =========================
-       Enter로 일정 추가
-    ========================= */
-
-    document
-        .getElementById("todoInput")
-        .addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter"
-                ) {
-
-                    document
-                        .getElementById(
-                            "addTodo"
-                        )
-                        .click();
-
-                }
-
-            }
-        );
-
-
-    /* =========================
-       초기 실행
-    ========================= */
-
-    renderCalendar();
-
-    renderCategories();
-
-    renderTodoCategories();
-
-</script>
-
-
-<!-- =========================
-     Supabase 연결
-========================= -->
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
+const SUPABASE_URL="https://nheilttewuleslenbrzo.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_VfH7he-LMvZLUjxR2G7_Fw_Z4ofwDVd";
+const supabaseClient=window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY,
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+        }
+    }
+);
 
-    const SUPABASE_URL =
-        "https://nheilttewuleslenbrzo.supabase.co";
+let currentYear=new Date().getFullYear(),currentMonth=new Date().getMonth();
+let selectedDateKey=null,editingTodoIndex=null,draggedTodoIndex=null,draggedTodoDateKey=null;
+let todos={};
+let categories=JSON.parse(localStorage.getItem("myCategories")||"[]");
 
-    const SUPABASE_PUBLISHABLE_KEY =
-        "sb_publishable_VfH7he-LMvZLUjxR2G7_Fw_Z4ofwDVd";
+function formatDateKey(y,m,d){return [y,String(m).padStart(2,"0"),String(d).padStart(2,"0")].join("-")}
+function saveCategories(){localStorage.setItem("myCategories",JSON.stringify(categories))}
+function renderCategories(){const list=document.getElementById("categoryList");list.innerHTML="";categories.forEach((category,index)=>{const item=document.createElement("div");item.className="category-item";const name=document.createElement("span");name.textContent=category;const del=document.createElement("button");del.textContent="×";del.className="category-delete";del.onclick=()=>{categories.splice(index,1);saveCategories();renderCategories();renderTodoCategories()};item.append(name,del);list.appendChild(item)})}
+function renderTodoCategories(){const select=document.getElementById("todoCategory");select.innerHTML="";const def=document.createElement("option");def.value="";def.textContent="카테고리 선택";select.appendChild(def);categories.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;select.appendChild(o)})}
 
-    const supabaseClient =
-        window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_PUBLISHABLE_KEY
-        );
+document.getElementById("addCategory").onclick=()=>{const input=document.getElementById("categoryInput"),name=input.value.trim();if(!name)return alert("카테고리 이름을 입력해주세요.");if(categories.includes(name))return alert("이미 있는 카테고리입니다.");categories.push(name);saveCategories();input.value="";renderCategories();renderTodoCategories()};
+document.getElementById("categoryInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("addCategory").click()});
 
-    console.log("Supabase 연결 준비 완료");
+function renderCalendar(){const calendar=document.querySelector(".calendar");calendar.querySelectorAll(".day").forEach(x=>x.remove());document.getElementById("monthTitle").textContent=`${currentYear}년 ${currentMonth+1}월`;const first=new Date(currentYear,currentMonth,1).getDay(),last=new Date(currentYear,currentMonth+1,0).getDate();for(let i=0;i<first;i++){const e=document.createElement("div");e.className="day";e.style.cursor="default";calendar.appendChild(e)}for(let day=1;day<=last;day++){const cell=document.createElement("div");cell.className="day";const today=new Date();if(currentYear===today.getFullYear()&&currentMonth===today.getMonth()&&day===today.getDate())cell.classList.add("today");const dateKey=formatDateKey(currentYear,currentMonth+1,day);if(selectedDateKey===dateKey)cell.classList.add("selected");const n=document.createElement("div");n.textContent=day;cell.appendChild(n);if(todos[dateKey]?.length){const count=document.createElement("div");count.className="todo-count";count.textContent=`${todos[dateKey].length}개`;cell.appendChild(count)}
+cell.onclick=()=>{document.querySelectorAll(".day.selected").forEach(x=>x.classList.remove("selected"));cell.classList.add("selected");selectedDateKey=dateKey;editingTodoIndex=null;document.getElementById("selectedDateTitle").textContent=`${currentYear}년 ${currentMonth+1}월 ${day}일`;document.getElementById("todoInput").value="";document.getElementById("todoCategory").value="";document.getElementById("addTodo").textContent="추가";renderTodoList()};
+cell.ondragover=e=>{e.preventDefault();if(draggedTodoIndex!==null)cell.classList.add("drag-over")};cell.ondragleave=()=>cell.classList.remove("drag-over");cell.ondrop=e=>{e.preventDefault();cell.classList.remove("drag-over");if(draggedTodoIndex===null||draggedTodoDateKey===null)return;const sourceKey=draggedTodoDateKey,source=todos[sourceKey]||[],moved=source.splice(draggedTodoIndex,1)[0];if(!moved){draggedTodoIndex=null;draggedTodoDateKey=null;return}if(sourceKey===dateKey)source.push(moved);else{todos[dateKey]??=[];todos[dateKey].push(moved)}if(!source.length)delete todos[sourceKey];draggedTodoIndex=null;draggedTodoDateKey=null;saveTodos();renderCalendar();renderTodoList()};calendar.appendChild(cell)}}
+document.getElementById("prevMonth").onclick=()=>{if(--currentMonth<0){currentMonth=11;currentYear--}renderCalendar()};document.getElementById("nextMonth").onclick=()=>{if(++currentMonth>11){currentMonth=0;currentYear++}renderCalendar()};
 
+let saveTodosRunning=false,saveTodosWaiting=false;
+async function saveTodos(){if(saveTodosRunning){saveTodosWaiting=true;return}saveTodosRunning=true;try{localStorage.setItem("myTodos",JSON.stringify(todos));const {data:{user},error:userError}=await supabaseClient.auth.getUser();if(userError||!user){console.error("사용자 확인 실패:",userError);return}
+const {error:deleteError}=await supabaseClient.from("events").delete().eq("user_id",user.id);if(deleteError){console.error("기존 일정 삭제 실패:",deleteError);return}
+const rows=[];Object.keys(todos).forEach(dateKey=>(todos[dateKey]||[]).forEach(todo=>rows.push({user_id:user.id,title:todo.text||"",event_date:dateKey,category:todo.category||"",completed:!!todo.completed})));if(rows.length){const {error:insertError}=await supabaseClient.from("events").insert(rows);if(insertError){console.error("Supabase 일정 저장 실패:",insertError);return}}console.log("Supabase 일정 저장 완료:",rows.length,"개")}catch(e){console.error("일정 저장 중 오류:",e)}finally{saveTodosRunning=false;if(saveTodosWaiting){saveTodosWaiting=false;saveTodos()}}}
+function sortTodos(arr){arr.sort((a,b)=>a.completed===b.completed?0:(a.completed?1:-1))}
+
+function renderTodoList(){const list=document.getElementById("todoList");list.innerHTML="";if(!selectedDateKey)return;const dateTodos=todos[selectedDateKey]||[];sortTodos(dateTodos);const groups={};dateTodos.forEach(todo=>(groups[todo.category||"미분류"]??=[]).push(todo));Object.keys(groups).forEach(category=>{const group=document.createElement("div");group.className="todo-category-group";const title=document.createElement("div");title.className="todo-category-title";title.textContent=category;group.appendChild(title);groups[category].forEach(todo=>{const index=dateTodos.indexOf(todo),item=document.createElement("div");item.className="todo-item";item.draggable=true;item.ondragstart=e=>{draggedTodoIndex=index;draggedTodoDateKey=selectedDateKey;item.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","todo")};item.ondragend=()=>{item.classList.remove("dragging");document.querySelectorAll(".todo-item.drag-over").forEach(x=>x.classList.remove("drag-over"));draggedTodoIndex=null;draggedTodoDateKey=null};item.ondragover=e=>{e.preventDefault();if(draggedTodoDateKey===selectedDateKey&&draggedTodoIndex!==index)item.classList.add("drag-over")};item.ondragleave=()=>item.classList.remove("drag-over");item.ondrop=e=>{e.preventDefault();e.stopPropagation();item.classList.remove("drag-over");if(draggedTodoDateKey!==selectedDateKey||draggedTodoIndex===index)return;const arr=todos[selectedDateKey],from=draggedTodoIndex,moved=arr.splice(from,1)[0];let target=index;if(from<target)target--;arr.splice(target,0,moved);sortTodos(arr);draggedTodoIndex=null;draggedTodoDateKey=null;saveTodos();renderTodoList();renderCalendar()};const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!todo.completed;cb.onclick=e=>e.stopPropagation();cb.onchange=()=>{todo.completed=cb.checked;sortTodos(dateTodos);saveTodos();renderTodoList();renderCalendar()};const text=document.createElement("span");text.textContent=todo.text;if(todo.completed){text.style.textDecoration="line-through";text.style.color="#999"}text.onclick=e=>{e.stopPropagation();editingTodoIndex=index;document.getElementById("todoInput").value=todo.text;document.getElementById("todoCategory").value=todo.category||"";document.getElementById("addTodo").textContent="수정"};const del=document.createElement("button");del.textContent="삭제";del.onclick=e=>{e.stopPropagation();dateTodos.splice(index,1);if(!dateTodos.length)delete todos[selectedDateKey];saveTodos();renderTodoList();renderCalendar()};item.append(cb,text,del);group.appendChild(item)});list.appendChild(group)})}
+
+document.getElementById("addTodo").onclick=()=>{if(!selectedDateKey)return alert("먼저 날짜를 선택해주세요.");const input=document.getElementById("todoInput"),text=input.value.trim(),category=document.getElementById("todoCategory").value;if(!text)return alert("할 일을 입력해주세요.");if(!category)return alert("카테고리를 선택해주세요.");todos[selectedDateKey]??=[];if(editingTodoIndex!==null){const todo=todos[selectedDateKey][editingTodoIndex];if(todo){todo.text=text;todo.category=category}editingTodoIndex=null}else todos[selectedDateKey].push({text,category,completed:false});input.value="";document.getElementById("todoCategory").value="";document.getElementById("addTodo").textContent="추가";sortTodos(todos[selectedDateKey]);saveTodos();renderTodoList();renderCalendar()};
+document.getElementById("todoInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("addTodo").click()});
+
+async function loadSupabaseTodos(){const {data:{user},error:userError}=await supabaseClient.auth.getUser();if(userError||!user){console.error("사용자 확인 실패:",userError);return}const {data,error}=await supabaseClient.from("events").select("*").eq("user_id",user.id).order("event_date",{ascending:true});if(error){console.error("Supabase 일정 불러오기 실패:",error);return}
+const loaded={};const seen=new Set();(data||[]).forEach(event=>{const dateKey=String(event.event_date||"").slice(0,10);if(!dateKey)return;const key=[dateKey,event.title||"",event.category||"",!!event.completed].join("\u0001");if(seen.has(key))return;seen.add(key);loaded[dateKey]??=[];loaded[dateKey].push({supabaseId:event.id,text:event.title||"",category:event.category||"",completed:!!event.completed})});todos=loaded;localStorage.setItem("myTodos",JSON.stringify(todos));renderCalendar();renderTodoList();console.log("Supabase 일정 불러오기 완료:",data?.length||0,"개")}
+
+const loginScreen=document.getElementById("loginScreen"),loginButton=document.getElementById("loginButton"),signupButton=document.getElementById("signupButton"),loginEmail=document.getElementById("loginEmail"),loginPassword=document.getElementById("loginPassword"),authMessage=document.getElementById("authMessage");
+loginButton.onclick=async()=>{const email=loginEmail.value.trim(),password=loginPassword.value;if(!email||!password){authMessage.textContent="이메일과 비밀번호를 입력해주세요.";return}authMessage.textContent="로그인 중...";const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){authMessage.textContent="로그인 실패: "+error.message;return}loginScreen.style.display="none";authMessage.textContent="";await loadSupabaseTodos()};
+signupButton.onclick=async()=>{
+    const email=loginEmail.value.trim(),password=loginPassword.value;
+    if(!email||!password){authMessage.textContent="이메일과 비밀번호를 입력해주세요.";return}
+    if(password.length<6){authMessage.textContent="비밀번호는 6자 이상이어야 합니다.";return}
+
+    authMessage.textContent="회원가입 중...";
+
+    const emailRedirectTo=window.location.origin+window.location.pathname;
+
+    const {data,error}=await supabaseClient.auth.signUp({
+        email,
+        password,
+        options:{
+            emailRedirectTo
+        }
+    });
+
+    if(error){
+        authMessage.textContent="회원가입 실패: "+error.message;
+        console.error(error);
+        return;
+    }
+
+    if(data.user&&!data.session){
+        authMessage.textContent="인증 메일을 보냈습니다. 이메일을 확인해주세요.";
+        return;
+    }
+
+    authMessage.textContent="회원가입이 완료되었습니다.";
+};
+
+function showAuthSuccess(){
+    document.getElementById("authSuccessScreen").classList.add("show");
+    loginScreen.style.display="none";
+    document.querySelector(".app").style.display="none";
+}
+
+function hideAuthSuccess(){
+    document.getElementById("authSuccessScreen").classList.remove("show");
+    document.querySelector(".app").style.display="";
+}
+
+document.getElementById("continueAfterVerification").onclick=async()=>{
+    hideAuthSuccess();
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(session){
+        loginScreen.style.display="none";
+        await loadSupabaseTodos();
+    }else{
+        loginScreen.style.display="flex";
+        authMessage.textContent="이메일 인증이 완료되었습니다. 이제 로그인해주세요.";
+    }
+};
+
+async function checkLoginStatus(){
+    const isAuthCallback=
+        window.location.hash.includes("access_token") ||
+        new URLSearchParams(window.location.search).has("code");
+
+    const {data:{session},error}=await supabaseClient.auth.getSession();
+
+    if(error){
+        console.error("로그인 상태 확인 실패:",error);
+        loginScreen.style.display="flex";
+        return;
+    }
+
+    if(isAuthCallback){
+        showAuthSuccess();
+        if(session) await loadSupabaseTodos();
+        return;
+    }
+
+    if(session){
+        loginScreen.style.display="none";
+        await loadSupabaseTodos();
+    }else{
+        loginScreen.style.display="flex";
+    }
+}
+
+renderCalendar();
+renderCategories();
+renderTodoCategories();
+checkLoginStatus();
 </script>
 
 <script>
+(function(){
+    const emailEl = document.getElementById("accountEmail");
+    const totalEl = document.getElementById("todoTotal");
+    const logoutButton = document.getElementById("logoutButton");
 
-    /* =========================
-       Supabase 일정 불러오기
-    ========================= */
-
-    async function loadSupabaseTodos() {
-
-        const {
-            data: {
-                user
+    async function refreshAccountUI(){
+        try{
+            const {data:{session}} = await supabaseClient.auth.getSession();
+            if(session && session.user){
+                emailEl.textContent = session.user.email || "로그인됨";
+                logoutButton.style.display = "";
+            }else{
+                emailEl.textContent = "로그인 필요";
+                logoutButton.style.display = "none";
             }
-        } = await supabaseClient.auth.getUser();
-
-
-        if (!user) {
-
-            console.log(
-                "로그인한 사용자가 없어 기존 로컬 일정을 사용합니다."
-            );
-
-            return;
-
+        }catch(e){
+            console.error(e);
         }
-
-
-        const {
-            data,
-            error
-        } = await supabaseClient
-            .from("events")
-            .select("*")
-            .eq("user_id", user.id)
-            .order(
-                "event_date",
-                {
-                    ascending: true
-                }
-            );
-
-
-        if (error) {
-
-            console.error(
-                "Supabase 일정 불러오기 실패:",
-                error
-            );
-
-            return;
-
-        }
-
-
-        /*
-           Supabase의 events 데이터를
-           기존 캘린더가 사용하는 형태로 변환
-
-           기존 구조:
-           todos["2026-09-23"] = [
-               {
-                   text: "...",
-                   category: "...",
-                   completed: false
-               }
-           ]
-        */
-
-        const loadedTodos = {};
-
-
-        (data || []).forEach(
-            function (event) {
-
-                const dateKey =
-                    String(event.event_date || "").slice(0, 10);
-
-
-                if (!dateKey) {
-                    return;
-                }
-
-
-                if (!loadedTodos[dateKey]) {
-
-                    loadedTodos[dateKey] =
-                        [];
-
-                }
-
-
-                loadedTodos[dateKey].push({
-
-                    /*
-                       Supabase id는
-                       이후 수정/삭제 기능을
-                       연결할 때 사용할 수 있도록 보관
-                    */
-
-                    supabaseId:
-                        event.id,
-
-                    text:
-                        event.title || "",
-
-                    category:
-                        event.category || "",
-
-                    completed:
-                        !!event.completed
-
-                });
-
-            }
-        );
-
-
-        todos =
-            loadedTodos;
-
-
-        /*
-           브라우저에도 최신 상태를 임시 저장
-           → 오프라인/로그인 전 화면 보조용
-        */
-
-        localStorage.setItem(
-            "myTodos",
-            JSON.stringify(todos)
-        );
-
-
-        renderCalendar();
-
-        renderTodoList();
-
-
-        console.log(
-            "Supabase 일정 불러오기 완료:",
-            data ? data.length : 0,
-            "개"
-        );
-
     }
 
-
-    /* =========================
-       로그인 / 회원가입
-    ========================= */
-
-    const loginScreen =
-        document.getElementById(
-            "loginScreen"
-        );
-
-    const loginButton =
-        document.getElementById(
-            "loginButton"
-        );
-
-    const signupButton =
-        document.getElementById(
-            "signupButton"
-        );
-
-    const loginEmail =
-        document.getElementById(
-            "loginEmail"
-        );
-
-    const loginPassword =
-        document.getElementById(
-            "loginPassword"
-        );
-
-    const authMessage =
-        document.getElementById(
-            "authMessage"
-        );
-
-
-    /* =========================
-       로그인
-    ========================= */
-
-    loginButton.addEventListener(
-        "click",
-        async function () {
-
-            const email =
-                loginEmail.value.trim();
-
-            const password =
-                loginPassword.value;
-
-
-            if (
-                !email ||
-                !password
-            ) {
-
-                authMessage.textContent =
-                    "이메일과 비밀번호를 입력해주세요.";
-
-                return;
-
-            }
-
-
-            authMessage.textContent =
-                "로그인 중...";
-
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth
-                    .signInWithPassword({
-
-                        email:
-                            email,
-
-                        password:
-                            password
-
-                    });
-
-
-            if (error) {
-
-                authMessage.textContent =
-                    "로그인 실패: " +
-                    error.message;
-
-                console.error(
-                    "로그인 실패:",
-                    error
-                );
-
-                return;
-
-            }
-
-
-            loginScreen.style.display =
-                "none";
-
-
-            authMessage.textContent =
-                "";
-
-
-            console.log(
-                "로그인 사용자:",
-                data.user.id
-            );
-
-
-            /*
-               로그인한 사용자의
-               Supabase 일정을 가져옴
-            */
-
-            await loadSupabaseTodos();
-
-        }
-    );
-
-
-    /* =========================
-       회원가입
-    ========================= */
-
-    signupButton.addEventListener(
-        "click",
-        async function () {
-
-            const email =
-                loginEmail.value.trim();
-
-            const password =
-                loginPassword.value;
-
-
-            if (
-                !email ||
-                !password
-            ) {
-
-                authMessage.textContent =
-                    "이메일과 비밀번호를 입력해주세요.";
-
-                return;
-
-            }
-
-
-            if (
-                password.length < 6
-            ) {
-
-                authMessage.textContent =
-                    "비밀번호는 6자 이상이어야 합니다.";
-
-                return;
-
-            }
-
-
-            authMessage.textContent =
-                "회원가입 중...";
-
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient.auth
-                    .signUp({
-
-                        email:
-                            email,
-
-                        password:
-                            password
-
-                    });
-
-
-            if (error) {
-
-                authMessage.textContent =
-                    "회원가입 실패: " +
-                    error.message;
-
-                console.error(
-                    "회원가입 실패:",
-                    error
-                );
-
-                return;
-
-            }
-
-
-            if (
-                data.user &&
-                !data.session
-            ) {
-
-                authMessage.textContent =
-                    "회원가입 완료! 이메일 인증 후 로그인해주세요.";
-
-                return;
-
-            }
-
-
-            authMessage.textContent =
-                "회원가입이 완료되었습니다.";
-
-        }
-    );
-
-
-    /* =========================
-       로그인 상태 확인
-    ========================= */
-
-    async function checkLoginStatus() {
-
-        const {
-            data: {
-                session
-            },
-            error
-        } =
-            await supabaseClient.auth
-                .getSession();
-
-
-        if (error) {
-
-            console.error(
-                "로그인 상태 확인 실패:",
-                error
-            );
-
-            loginScreen.style.display =
-                "flex";
-
+    async function logout(){
+        const {error}=await supabaseClient.auth.signOut();
+        if(error){
+            alert("로그아웃에 실패했습니다.");
+            console.error(error);
             return;
-
         }
-
-
-        if (session) {
-
-            loginScreen.style.display =
-                "none";
-
-
-            console.log(
-                "현재 로그인 사용자:",
-                session.user.id
-            );
-
-
-            /*
-               페이지를 새로 열었을 때도
-               해당 계정의 일정을 불러옴
-            */
-
-            await loadSupabaseTodos();
-
-        } else {
-
-            loginScreen.style.display =
-                "flex";
-
-        }
-
+        location.reload();
     }
 
+    logoutButton.addEventListener("click",logout);
 
-    checkLoginStatus();
+    // Keep the selected-day count visually synced with the current data.
+    const observer = new MutationObserver(function(){
+        try{
+            const selected = window.selectedDateKey;
+            const data = window.todos;
+            if(selected && data && data[selected]){
+                totalEl.textContent = data[selected].length;
+            }else{
+                const list=document.getElementById("todoList");
+                totalEl.textContent = list && list.querySelectorAll(".todo-item").length || 0;
+            }
+        }catch(e){}
+    });
+    observer.observe(document.getElementById("todoList"),{childList:true,subtree:true});
 
+    supabaseClient.auth.onAuthStateChange(function(){
+        setTimeout(refreshAccountUI,0);
+    });
+
+    refreshAccountUI();
+})();
 </script>
-
 
 </body>
-
 </html>
